@@ -1,0 +1,436 @@
+---
+title: "Writing Functions in R"
+author: "John Obrycki"
+date: "12/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### An introduction to functions
+
+The goals of this document are as follows:
+
+* Describe what a function is
+* Check out function structures
+* Try writing some functions
+* Save your functions in a way to share
+* Take a look at function code
+* Encourage you to try this out for your own analysis!
+* Link to other resources about functions
+
+### What is a function?
+
+When you use R, you are likely using a function to help with your analysis. Have you ever used calculated a `mean` or a `sd`? How about a `summary`? 
+
+Those are all functions in R!
+
+Let's use the `CO2` dataset, you can learn more about it here <a href="https://stat.ethz.ch/R-manual/R-patched/library/datasets/html/zCO2.html" target="_blank">CO2 dataset</a>
+
+```
+The CO2 data frame has 84 rows and 5 columns of data from an experiment on the cold tolerance of the grass species Echinochloa crus-galli.
+```
+
+```{r}
+mean(CO2$uptake)
+```
+
+```{r}
+sd(CO2$uptake)
+```
+
+```{r}
+summary(CO2)
+```
+
+To answer the question about what is a function, one way to answer that question is that **a function in R is a command that performs an action on a specified object.**
+
+```{r}
+# If you try to run the following, you'll see
+#mean()
+#Error in mean.default() : argument "x" is missing, with no default Calls:...
+```
+
+```{r}
+#Here there is an argument, CO2$uptake is what is then being placed within the structure of the mean function
+mean(CO2$uptake)
+```
+
+### Function structures
+
+As you've seen from above, the general structure for a function is some name for the function, such as `mean` or `sd`, and then parentheses, and within those parentheses are noting where the function is applied to. Or as noted in the error message above, a function needs an "argument"
+
+`functionName(argument)`
+
+A function can have more than one argument, and instead could look like this:
+
+`functionName(argument1,argument2,argument3)`
+
+The `apply` function is an example of a function that can have multiple arguments. As you see in the `apply` <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/apply.html" target="_blank">documentation</a>, one of the arguments in the `apply` function can also be another function (FUN)!
+
+```
+apply(X, MARGIN, FUN, ..., simplify = TRUE)
+```
+
+Yes, working with functions in R is FUN! No matter what R says!
+
+```
+Error in match.fun(FUN) : argument "FUN" is missing, with no default
+```
+
+Sometimes you need to supply all arguments for a function, and sometimes default choices are built into the function. You would need to specifically change the default.
+
+For example, the default method for `mean` as noted in the <a href="https://stat.ethz.ch/R-manual/R-devel/library/base/html/mean.html" target="_blank">documentation</a> is:
+
+```
+mean(x, trim = 0, na.rm = FALSE, ...)
+```
+
+The values of trim is preset to 0 and na.rm is set to `FALSE`. You may have had to additionally specify `na.rm=TRUE` when trying to calculate a mean.
+
+Another interesting function to check out the documentation for is when you are calculating `quartiles()` which allows you to <a href="https://stat.ethz.ch/R-manual/R-patched/library/stats/html/quantile.html" target="_blank">select a few different options</a> for how to calculate these quartiles.
+
+The default method is:
+
+```
+## Default S3 method:
+quantile(x, probs = seq(0, 1, 0.25), na.rm = FALSE,
+         names = TRUE, type = 7, digits = 7, ...)
+```
+
+
+### Trying out writing some functions
+
+Now let's try to write some functions. In thinking about the pattern of `functionName(argument)` you can start a function with the following:
+
+```
+FantasticFunction<-function(x){
+
+}
+```
+
+In the above example, you've created a new function called `FantasticFunction` because you've declared that this name is a function, with one argument `(x)` and then what happens in the function is defined in the `{}` portion.
+
+```{r}
+FantasticFunction<-function(x){
+  x+1869
+  #The year that ISU opened!
+  #https://web.iastate.edu/about/history/
+  #We're assuming that only numbers would be used, not a string
+}
+```
+
+Let's try running the function!
+
+```{r}
+FantasticFunction(20)
+```
+
+As a note, the `(x)` notation is default, but not required.
+
+```{r}
+FantasticFunction2<-function(theargument){
+  theargument+1869
+  #The year that ISU opened!
+  #https://web.iastate.edu/about/history/
+  #We're assuming that only numbers would be used, not a string
+}
+```
+
+```{r}
+FantasticFunction2(20)
+```
+
+Functions can certainly help with calculations, but also consider ways that functions can help your **processes!**
+
+For example, maybe you always perform an exploratory data analysis that includes creating a histogram, boxplot, quantile-quantile plot, and generating summary statistics including a standard deviation. You could try the following approach every time you want to analyze a variable.
+
+```
+hist(variable1)
+boxplot(variable1)
+qqnorm(variable1)
+qqline(variable1)
+summary(variable1)
+sd(variable1)
+
+hist(variable2)
+boxplot(variable2)
+qqnorm(variable2)
+qqline(variable2)
+summary(variable2)
+sd(variable2)
+```
+
+Or you could consider creating your own data analysis function that you could use again and again!
+
+```{r}
+MyExploratoryDataFunction<-function(x){
+par(mfrow=c(2,2))
+  
+hist(x,main=paste(deparse(substitute(x)),"Histogram"),xlab=paste(deparse(substitute(x))))
+
+boxplot(x,main=paste(deparse(substitute(x)),"Boxplot"),ylim=c(min(x)-10,max(x)+10))
+
+qqnorm(x,main=paste(deparse(substitute(x)),"Q-Q"))
+qqline(x)
+
+plot(1,type="n",xlim=c(0,10),ylim=c(0,10),xaxt="n",yaxt="n",xlab="",ylab="",bty="n",main=paste("Summary Information \n",deparse(substitute(x))))
+
+text(5,9.5,paste(round(summary(x)[1],2)))
+text(2,9.5,"Min = ")
+
+text(5,8,paste(round(summary(x)[2],2)))
+text(2,8,"1st Qt = ")
+
+text(5,6.5,paste(round(summary(x)[3],2)))
+text(2,6.5,"Median = ")
+
+text(5,5,paste(round(summary(x)[4],2)))
+text(2,5,"Mean = ")
+
+text(5,3.5,paste(round(summary(x)[5],2)))
+text(2,3.5,"3rd Qt = ")
+
+text(5,2,paste(round(summary(x)[6],2)))
+text(2,2,"Max = ")
+
+text(5,0.5,paste(round(sd(x),2)))
+text(2,0.5,"St Dev = ")
+
+}
+```
+
+Does this work with the CO2 uptake data?
+
+```{r}
+MyExploratoryDataFunction(CO2$uptake)
+```
+
+How about NPK yield data?
+
+
+```{r}
+MyExploratoryDataFunction(npk$yield)
+```
+
+And even the cars dataset?
+
+```{r}
+MyExploratoryDataFunction(cars$dist)
+```
+
+### Save your functions in a way to share
+
+You've just written a function that you're excited about saving for future use and maybe sharing with others too!
+
+You could copy and paste the above function everytime you wanted to use it in R. Or, you could save the file as a .R file type and then use this code.
+
+```
+source("folder/MyExploratoryDataFunction.R")
+```
+
+You will just need to save the function in a location `folder` and then tell R where to look for the function to load into R.
+
+Or if you sent the file to someone else, they could download the file, and follow the same processs!
+
+### Take a look at function code
+
+How can you see the source code of a function?
+
+How about typing the name of the function?
+
+```{r}
+MyExploratoryDataFunction
+```
+
+Or how about this function?
+
+```{r}
+rowMeans
+```
+
+That works for the function we just wrote, but it won't necessarily work for all functions.
+
+```{r}
+summary
+```
+
+With `summary` we have to look more in depth using some additional commands.
+
+```{r}
+getAnywhere(summary)
+methods(summary)
+getAnywhere(summary.default)
+
+```
+
+As you see in this last line of code
+
+```
+package:base
+  registered S3 method for summary from namespace base
+```
+
+For more information on S3, you may want to check out <a href="http://adv-r.had.co.nz/S3.html" target="_blank">this link</a> as a starting place!
+
+And while we're here, how about some links for 
+
+* <a href="http://adv-r.had.co.nz/S3.html" target="_blank">S3</a>
+* <a href="http://adv-r.had.co.nz/S4.html" target="_blank">S4</a>
+* <a href="http://adv-r.had.co.nz/R5.html" target="_blank">R5</a>
+
+You really start to delve into these functions. If this sounds interesting to you, one place that might be helpful for more information is this article from <a href="https://cran.r-project.org/doc/FAQ/R-FAQ.html#How-do-I-access-the-source-code-for-a-function_003f" target="_blank">2006<a/>, specifically the "R Help Desk" section by Uwe Ligges.
+
+```{r}
+methods("mean")
+```
+
+```{r}
+mean
+```
+
+```{r}
+getAnywhere(mean.default)
+```
+
+```{r}
+getAnywhere(.Internal(mean(x)))
+```
+
+Remember when learning about functions you can always try the `?name` approach.
+
+```{r}
+#?rowMeans
+#?mean
+```
+
+Let's think about how this might affect the code that was written earlier that created the exploratory data output. We know it worked for `CO2$uptake`.
+
+```{r}
+MyExploratoryDataFunction(CO2$uptake)
+```
+
+What happens if we try to use a non-numeric variable.
+
+```
+MyExploratoryDataFunction(CO2$Treatment)
+Error in hist.default(x, main = paste(deparse(substitute(x)), "Histogram"),  : 
+  'x' must be numeric
+```
+The error provided by R suggests we start to run into problems once the `hist.default` function is tried to be used within the larger function. `hist.default` needed a numeric data type, let's check the data types!
+
+
+```{r}
+class(CO2$uptake)
+class(CO2$Treatment)
+```
+
+Given the brief discussion about how functions can include different classes, like how the S3 approach allows for separating out by data type, there are ways we can improve this exploratory data function to help specify which types of values can be used.
+
+```{r}
+
+MyExploratoryDataFunction<-function(x){
+#How about adding an if else statement structure
+#The first { of the if statement is opened here
+	if(class(x)=="numeric"){
+par(mfrow=c(2,2))
+  
+hist(x,main=paste(deparse(substitute(x)),"Histogram"),xlab=paste(deparse(substitute(x))))
+
+boxplot(x,main=paste(deparse(substitute(x)),"Boxplot"),ylim=c(min(x)-10,max(x)+10))
+
+qqnorm(x,main=paste(deparse(substitute(x)),"Q-Q"))
+qqline(x)
+
+plot(1,type="n",xlim=c(0,10),ylim=c(0,10),xaxt="n",yaxt="n",xlab="",ylab="",bty="n",main=paste("Summary Information \n",deparse(substitute(x))))
+
+text(5,9.5,paste(round(summary(x)[1],2)))
+text(2,9.5,"Min = ")
+
+text(5,8,paste(round(summary(x)[2],2)))
+text(2,8,"1st Qt = ")
+
+text(5,6.5,paste(round(summary(x)[3],2)))
+text(2,6.5,"Median = ")
+
+text(5,5,paste(round(summary(x)[4],2)))
+text(2,5,"Mean = ")
+
+text(5,3.5,paste(round(summary(x)[5],2)))
+text(2,3.5,"3rd Qt = ")
+
+text(5,2,paste(round(summary(x)[6],2)))
+text(2,2,"Max = ")
+
+text(5,0.5,paste(round(sd(x),2)))
+text(2,0.5,"St Dev = ")
+
+#The } part of the if statement is closed here to transition to the else
+} else {
+	print(paste("This function only works for numeric variable classes and your variable's class is",class(x)))
+}
+}
+```
+
+Running this against the numeric data type of uptake results in the same output.
+
+```{r}
+MyExploratoryDataFunction(CO2$uptake)
+```
+
+Now that we've updated the code, we get an error message that helps us determine what is going on.
+
+```{r}
+MyExploratoryDataFunction(CO2$Treatment)
+```
+
+This type of error message is now a little more similar to the kind we see when using existing functions in R.
+
+```{r}
+mean(CO2$treatment)
+```
+
+### Encourage you to try this out for your own analysis!
+
+The section heading says it all. Given this overview of functions, I encourage you to start writing your own functions! The key component is `functionName <- function(x,y,z....){}` and away you go on R adventuRes!
+
+You could even start using more than one argument in the function!
+
+```{R}
+TwoPartFunction<-function(a,b){
+  if(b == 1){
+    boxplot(a)
+  } else if (b == 2) {
+    hist(a)
+  } else if (b == 3){
+    plot(a)
+  } else {
+    print("Please select one of the following plot types: boxplot (enter a 1), histogram (enter a 2), or scatterplot (enter a 3)")
+  }
+}
+```
+
+```{R}
+TwoPartFunction(CO2$uptake, 1)
+```
+
+```{R}
+TwoPartFunction(CO2$uptake, 4)
+```
+
+### Link to other resources about functions
+
+Here's some links that might be helpful.
+
+Interested to see how to perform hand code some analyses in R using matrices? Check out the amazing resources at Dr. Nettleton's <a href="https://dnett.github.io/S510/stat510.html" target="_blank">STAT 510 page</a>
+
+Interested in even more great R code from ISU? Check out Dr. Dixon's page as well from <a href="https://pdixon.stat.iastate.edu/stat406/" target="_blank">STAT 406</a>
+
+Lots of resources about functions too!
+
+* <a href="https://www.earthdatascience.org/courses/earth-analytics/automate-science-workflows/write-function-r-programming/" target="_blank">Earth Lab</a>
+* <a href="http://adv-r.had.co.nz/S3.html" target="_blank">S3</a>
+* <a href="http://adv-r.had.co.nz/S4.html" target="_blank">S4</a>
+* <a href="http://adv-r.had.co.nz/R5.html" target="_blank">R5</a>
